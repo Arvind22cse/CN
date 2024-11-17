@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Code Editor (TCP)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        #editor-container {
+            width: 90%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #editor {
+            width: 100%;
+            height: 400px;
+            padding: 15px;
+            font-size: 1rem;
+            font-family: monospace;
+            color: #333;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: none;
+            outline: none;
+            overflow-y: auto;
+        }
+
+        #editor:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 5px rgba(74, 144, 226, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div id="editor-container">
+        <h2>Collaborative Code Editor (TCP)</h2>
+        <textarea id="editor" placeholder="Start typing..."></textarea>
+    </div>
+    
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const editor = document.getElementById('editor');
+        let isUpdating = false;
+    
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === 'update' && !isUpdating) {
+                isUpdating = true;
+                editor.value = message.data;
+                isUpdating = false;
+            } else if (message.type === 'history') {
+                editor.value = message.data;
+            }
+        };
+
+        editor.addEventListener('input', () => {
+            if (!isUpdating) {
+                const data = { type: 'update', data: editor.value };
+                ws.send(JSON.stringify(data));
+            }
+        });
+    </script>
+</body>
+</html>

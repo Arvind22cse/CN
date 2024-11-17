@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Code Editor</title>
+    <style>
+        #editor {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Collaborative Code Editor</h2>
+    <textarea id="editor" placeholder="Start typing..."></textarea>
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        const editor = document.getElementById('editor');
+        let isUpdating = false;  // Prevent looping updates
+    
+        // Handle incoming WebSocket messages
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);  // Parse the message
+    
+            // Check if it's an update message or history of previous content
+            if (message.type === 'update' && !isUpdating) {
+                isUpdating = true;
+                editor.value = message.data;
+                isUpdating = false;
+            } else if (message.type === 'history') {
+                editor.value = message.data;
+            }
+        };
+    
+        // Send the current content of the editor to the server on input change
+        editor.addEventListener('input', () => {
+            if (!isUpdating) {
+                const data = {
+                    type: 'update',
+                    data: editor.value
+                };
+                ws.send(JSON.stringify(data));  // Send the editor content as a stringified object
+            }
+        });
+    </script>
+    
+</body>
+</html>
